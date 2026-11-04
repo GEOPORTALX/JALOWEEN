@@ -39,6 +39,13 @@ input[type=checkbox]{width:22px;height:22px;flex:none}
 .it>span{flex:1}.it input[type=number]{width:96px}
 table{width:100%;border-collapse:collapse;font-size:14px}
 td,th{padding:5px 4px;text-align:left}td input{padding:6px}
+.top{position:sticky;top:0;z-index:5;border:2px solid var(--ac);margin-top:4px}
+.pid{font:italic 700 30px Georgia,serif;color:var(--ac);margin:0 0 8px}
+.big{font-size:20px;padding:14px;border:2px solid var(--ac)}
+.it2{padding:10px 0;border-top:1px solid var(--bd)}
+.it2 .nm{flex:1;font-weight:600}
+.q{display:flex;align-items:center;gap:6px;margin-top:6px}
+.q input[type=number]{width:80px}.q .u{width:92px}.q b{margin-left:auto}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#0f0818;border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom)}
 nav button{flex:1;border:0;border-radius:0;background:none;padding:12px 2px;color:var(--mu);font-size:13px}
 nav button.on{color:var(--ac);outline:0;box-shadow:inset 0 3px var(--ac)}
@@ -60,19 +67,19 @@ prods:[
 {id:'es',e:'🧂',n:'Escarchado con vaso',p:20,c:5.06,plan:25},
 {id:'ec',e:'🥤',n:'Escarchado en vaso del cliente',p:15,c:2.51,plan:0}],
 items:[
-{n:'Vodka 1 L',q:'azulitos',p:299,b:1},{n:'Ron blanco 1.75 L',q:'mojitos',p:460,b:1},
-{n:'Frutos rojos congelados 454 g',q:'mojito frutos rojos',p:65,b:1},{n:'Vasos 1 L (150)',q:'todos',p:382,b:1},
-{n:'Agua mineral 8 × 1.75 L',q:'mojitos',p:229,b:1},{n:'Volt 400 ml (6)',q:'azulitos',p:54,b:1},
-{n:'Miguelito mora azul 980 g',q:'solo azulitos',p:75,b:1},{n:'Miguelito tradicional ~950 g',q:'micheladas y escarchados',p:75,b:1},
-{n:'Chamoy tradicional 1.1 kg',q:'micheladas y escarchados',p:60,b:1},{n:'Escarcha mora azul 1.1 kg',q:'azulitos',p:60,b:1},
-{n:'Absolut frutos rojos 2 × 200 ml',q:'pon lo que pagaste',p:0,b:1},
-{n:'Caguamas (3 cartones de 12 a $475)',q:'30 necesarias',p:1425,b:0},{n:'Sprite 3 × 3 L',q:'azulitos',p:135,b:0},
-{n:'Curazao 1 L',q:'azulitos',p:90,b:0},{n:'Agua mineral 2 × 1.75 L',q:'faltan ~3.4 L',p:57,b:0},
-{n:'Limón ~110 pzas',q:'mojitos y micheladas',p:120,b:0},{n:'Hierbabuena',q:'~29 porciones',p:60,b:0},
-{n:'Azúcar 1 kg',q:'mojitos',p:28,b:0},{n:'Sal 250 g',q:'micheladas',p:10,b:0},
-{n:'Hielo 3 bolsas de 5 kg',q:'todo',p:114,b:0},{n:'Gasolina / traslado',q:'pendiente',p:0,b:0}]});
+{n:'Vodka 1 L',q:'azulitos',u:'bot',c:1,p:299,b:1},{n:'Ron blanco 1.75 L',q:'mojitos',u:'bot',c:1,p:460,b:1},
+{n:'Frutos rojos congelados 454 g',q:'mojito frutos rojos',u:'bolsa',c:1,p:65,b:1},{n:'Vasos 1 L (150)',q:'todos',u:'paq',c:1,p:382,b:1},
+{n:'Agua mineral 1.75 L',q:'mojitos',u:'bot',c:8,p:28.625,b:1},{n:'Volt 400 ml',q:'azulitos',u:'pzas',c:6,p:9,b:1},
+{n:'Miguelito mora azul 980 g',q:'solo azulitos',u:'bolsa',c:1,p:75,b:1},{n:'Miguelito tradicional ~950 g',q:'micheladas y escarchados',u:'bolsa',c:1,p:75,b:1},
+{n:'Chamoy tradicional 1.1 kg',q:'micheladas y escarchados',u:'frasco',c:1,p:60,b:1},{n:'Escarcha mora azul 1.1 kg',q:'azulitos',u:'frasco',c:1,p:60,b:1},
+{n:'Absolut frutos rojos 200 ml',q:'pon lo que pagaste',u:'bot',c:2,p:0,b:1},
+{n:'Caguamas Corona y Victoria',q:'cartón de 12 = $475',u:'caguamas',c:30,p:39.58,b:0},{n:'Sprite 3 L',q:'azulitos',u:'bot',c:3,p:45,b:0},
+{n:'Curazao 1 L',q:'azulitos',u:'bot',c:1,p:90,b:0},{n:'Agua mineral 1.75 L (extra)',q:'faltan ~3.4 L',u:'bot',c:2,p:28.625,b:0},
+{n:'Limón',q:'mojitos y micheladas',u:'pzas',c:110,p:1.1,b:0},{n:'Hierbabuena',q:'~29 porciones',u:'manojos',c:4,p:15,b:0},
+{n:'Azúcar',q:'mojitos',u:'kg',c:1,p:28,b:0},{n:'Sal',q:'micheladas',u:'250 g',c:1,p:10,b:0},
+{n:'Hielo',q:'todo',u:'bolsas 5 kg',c:3,p:38,b:0},{n:'Gasolina / traslado',q:'pendiente',u:'',c:1,p:0,b:0}]});
 let S=load(),view='caja',cart={},nm='',meth='Efectivo',rec='';
-function load(){try{return JSON.parse(localStorage.getItem(K))||DEF()}catch(e){return DEF()}}
+function load(){try{const d=JSON.parse(localStorage.getItem(K));if(!d)return DEF();if(d.items.some(i=>i.c==null))d.items=DEF().items;return d}catch(e){return DEF()}}
 function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
 const m=n=>'$'+(Math.round(n*100)/100).toLocaleString('es-MX',{maximumFractionDigits:2});
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -90,9 +97,9 @@ const $v=document.getElementById('v'),$nav=document.getElementById('nav');
 function add(id,d){cart[id]=Math.max(0,(cart[id]||0)+d);if(!cart[id])delete cart[id];render()}
 function caja(){
  const t=cartTotal(),L=Object.entries(cart);
- return `<div class="grid">${S.prods.map(p=>`<button class="prod" onclick="add('${p.id}',1)"><span class="em">${p.e}</span><b>${esc(p.n)}</b><small>${m(p.p)}</small>${cart[p.id]?`<i class="bdg">${cart[p.id]}</i>`:''}</button>`).join('')}</div>
- <div class="card"><h3>Pedido #${S.seq+1}</h3>
- <input placeholder="¿A nombre de quién?" value="${esc(nm)}" oninput="nm=this.value" autocomplete="off">
+ return `<div class="card top"><h2 class="pid">Pedido #${S.seq+1}</h2><input class="big" placeholder="¿A nombre de quién?" value="${esc(nm)}" oninput="nm=this.value" autocomplete="off"></div>
+ <div class="grid">${S.prods.map(p=>`<button class="prod" onclick="add('${p.id}',1)"><span class="em">${p.e}</span><b>${esc(p.n)}</b><small>${m(p.p)}</small>${cart[p.id]?`<i class="bdg">${cart[p.id]}</i>`:''}</button>`).join('')}</div>
+ <div class="card"><h3>Cuenta</h3>
  ${L.map(([k,v])=>`<div class="it"><span>${esc(P(k).n)}<small>${m(P(k).p)} c/u</small></span><button class="sm" onclick="add('${k}',-1)">−</button><b>${v}</b><button class="sm" onclick="add('${k}',1)">+</button></div>`).join('')||'<p class="mu">Toca un producto para empezar.</p>'}
  <div class="chips">${MET.map(x=>`<button class="sm ${meth===x?'on':''}" onclick="meth='${x}';render()">${x}</button>`).join('')}</div>
  ${meth==='Efectivo'?`<input type="number" inputmode="decimal" placeholder="Recibido" value="${rec}" oninput="rec=this.value;chg()"><p>Cambio: <b id="chg">${chgTxt(t)}</b></p>`:''}
@@ -118,7 +125,7 @@ function cola(){
 function stats(){
  let inc=0,card=0,pend=0,cogs=0,n={};
  S.orders.forEach(o=>{o.paid?(inc+=o.total,o.method==='Tarjeta'&&(card+=o.total)):pend+=o.total;for(const k in o.it){n[k]=(n[k]||0)+o.it[k];cogs+=o.it[k]*(P(k)?P(k).c:0)}});
- return{inc,pend,cogs,n,fee:card*S.fee/100,inv:S.items.reduce((a,i)=>a+i.p,0)}}
+ return{inc,pend,cogs,n,fee:card*S.fee/100,inv:S.items.reduce((a,i)=>a+tot(i),0)}}
 function dash(){
  const s=stats(),net=s.inc-s.fee,gan=net-s.inv,pct=s.inv?Math.min(100,Math.max(0,net/s.inv*100)):0,open=S.orders.filter(o=>o.st<3).length;
  return `<div class="k"><div class="card"><small>Ingreso cobrado</small><b>${m(s.inc)}</b></div><div class="card"><small>Por cobrar</small><b>${m(s.pend)}</b></div>
@@ -129,18 +136,21 @@ function dash(){
  <div class="card"><h3>Ventas por producto</h3><table><tr><th>Producto</th><th>Vendidos</th><th>Plan</th></tr>${S.prods.map(p=>`<tr><td>${esc(p.n)}</td><td>${s.n[p.id]||0}</td><td class="mu">${p.plan}</td></tr>`).join('')}</table>
  <p class="mu">Pedidos: ${S.orders.length} · en cola: ${open}</p></div>`}
 /* ---- COMPRAS ---- */
+const tot=i=>(+i.c||0)*(+i.p||0);
 function tg(i){S.items[i].b=S.items[i].b?0:1;save();render()}
-function pr(i,v){S.items[i].p=+v||0;save();render()}
-function addItem(){const n=prompt('¿Qué compraste o te falta?');if(!n)return;const p=+prompt('Precio','0')||0;S.items.push({n,q:'',p,b:0});save();render()}
+function ed(i,k,v){S.items[i][k]=['n','u','q'].includes(k)?v:(+v||0);save();render()}
+function rm(i){if(confirm('¿Quitar "'+S.items[i].n+'"?')){S.items.splice(i,1);save();render()}}
+function addItem(){const n=prompt('¿Qué compraste o te falta?');if(!n)return;S.items.push({n,q:'',u:'pzas',c:1,p:0,b:0});save();render()}
 function compras(){
- const sp=S.items.filter(i=>i.b).reduce((a,i)=>a+i.p,0),fl=S.items.filter(i=>!i.b).reduce((a,i)=>a+i.p,0),inv=sp+fl,pot=S.prods.reduce((a,p)=>a+p.plan*p.p,0);
- const row=(i,x)=>`<label class="it"><input type="checkbox" ${i.b?'checked':''} onchange="tg(${x})"><span>${esc(i.n)}<small>${esc(i.q)}</small></span><input type="number" inputmode="decimal" value="${i.p}" onchange="pr(${x},this.value)"></label>`;
+ const sp=S.items.filter(i=>i.b).reduce((a,i)=>a+tot(i),0),fl=S.items.filter(i=>!i.b).reduce((a,i)=>a+tot(i),0),inv=sp+fl,pot=S.prods.reduce((a,p)=>a+p.plan*p.p,0);
+ const row=(i,x)=>`<div class="it2"><div class="row"><input type="checkbox" ${i.b?'checked':''} onchange="tg(${x})"><input class="nm" value="${esc(i.n)}" onchange="ed(${x},'n',this.value)"><button class="sm" onclick="rm(${x})">✕</button></div>
+ <div class="q"><input type="number" step="any" inputmode="decimal" value="${i.c}" onchange="ed(${x},'c',this.value)"><input class="u" value="${esc(i.u||'')}" placeholder="unidad" onchange="ed(${x},'u',this.value)"><span>×</span><input type="number" step="any" inputmode="decimal" value="${i.p}" onchange="ed(${x},'p',this.value)"><b>${m(tot(i))}</b></div>${i.q?`<small>${esc(i.q)}</small>`:''}</div>`;
  const part=b=>S.items.map((i,x)=>!!i.b===b?row(i,x):'').join('');
  return `<div class="k"><div class="card"><small>Ya gastado</small><b>${m(sp)}</b></div><div class="card"><small>Falta por comprar</small><b>${m(fl)}</b></div>
  <div class="card"><small>Inversión total</small><b>${m(inv)}</b></div><div class="card"><small>Ingreso si vendes el plan</small><b>${m(pot)}</b></div></div>
  <div class="card"><h3>Ganancia proyectada</h3><p>Vendiendo 100%: <b class="${pot-inv>=0?'ok':'bad'}">${m(pot-inv)}</b><br>Vendiendo 70%: <b class="${pot*.7-inv>=0?'ok':'bad'}">${m(pot*.7-inv)}</b><br>Empatas vendiendo ~${pot?Math.round(inv/pot*100):0}% del plan</p>
- <small>Sin comisión de terminal. Cambia precios abajo o el plan en Ajustes.</small></div>
- <div class="card"><h3>Falta por comprar</h3>${part(false)||'<p class="ok">Ya compraste todo 🎉</p>'}</div>
+ <small>Sin comisión de terminal. El plan se cambia en Ajustes.</small></div>
+ <div class="card"><h3>Falta por comprar</h3><small>Cada renglón: cantidad, unidad y precio por unidad. El total se calcula solo. Marca la casilla cuando ya lo compraste.</small>${part(false)||'<p class="ok">Ya compraste todo 🎉</p>'}</div>
  <div class="card"><h3>Ya comprado</h3>${part(true)}</div><button onclick="addItem()">+ Agregar gasto o compra</button>`}
 /* ---- AJUSTES ---- */
 function pf(i,k,v){S.prods[i][k]=k==='n'?v:(+v||0);save()}
