@@ -47,39 +47,73 @@ td,th{padding:5px 4px;text-align:left}td input{padding:6px}
 .q{display:flex;align-items:center;gap:6px;margin-top:6px}
 .q input[type=number]{width:80px}.q .u{width:92px}.q b{margin-left:auto}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#0f0818;border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom)}
-nav button{flex:1;border:0;border-radius:0;background:none;padding:12px 2px;color:var(--mu);font-size:13px}
+nav button{flex:1;border:0;border-radius:0;background:none;padding:9px 0;color:var(--mu);font-size:11px;line-height:1.3}
 nav button.on{color:var(--ac);outline:0;box-shadow:inset 0 3px var(--ac)}
 </style>
 </head>
 <body>
-<h1>🎃 Bebidas Halloween</h1>
+<h1>🎃 Bebidas Halloween <span id="stt" class="mu" style="font:13px system-ui"></span></h1>
 <main id="v"></main>
 <nav id="nav"></nav>
 <script>
+/* Pega aquí tu firebaseConfig (Firebase → Project settings → Your apps) */
+const FB={apiKey:'',authDomain:'',projectId:'',storageBucket:'',messagingSenderId:'',appId:''};
 const K='bh_v1',ST=['Pendiente','Preparando','Listo','Entregado'],MET=['Efectivo','Transferencia','Tarjeta','Por cobrar'];
-const DEF=()=>({seq:0,fee:4,orders:[],
+const R=(n,a,c,al)=>({n,a,c,al:al?1:0});
+const RECDEF=()=>({
+az:[R('Vodka (promedio de 2 botellas)','60 ml',10.12,1),R('Volt','100 ml',2.25),R('Sprite','~560 ml',8.44),R('Curazao','30 ml',2.7),R('Escarcha mora azul','25 g',1.36),R('Miguelito mora azul','15 g',1.15),R('Hielo','4 hielos medianos',1),R('Vaso 1 L','1',2.55)],
+mt:[R('Ron blanco (promedio de 2 botellas)','90 ml',21.81,1),R('Agua mineral','600 ml',9.81),R('Limón','3 pzas',3.3),R('Hierbabuena','1 porción (8-10 hojas)',1.88),R('Azúcar','25 g (2 cucharadas)',0.7),R('Hielo','4 hielos medianos',1),R('Vaso 1 L','1',2.55),R('Macerador (reparto entre 44 mojitos)','1 uso',3.22)],
+mf:[R('Absolut frutos rojos','60 ml',0,1),R('Frutos rojos congelados','40 g',5.73),R('Limón','1 pza',1.1),R('Hierbabuena','8-10 hojas',1.88),R('Azúcar','25 g',0.7),R('Agua mineral','600 ml',9.81),R('Hielo','4 hielos medianos',1),R('Vaso 1 L','1',2.55),R('Macerador (reparto entre 44 mojitos)','1 uso',3.22)],
+co:[R('Caguama Corona 1.2 L','1 caguama (1200 ml)',39.58,1),R('Chamoy','25 g',1.36),R('Miguelito tradicional','15 g',1.15),R('Limón','3 pzas',3.3),R('Sal','poquito',0.2),R('Hielo','4 hielos medianos',1),R('Vaso 1 L','1',2.55)],
+vi:[R('Caguama Victoria 1.2 L','1 caguama (1200 ml)',39.58,1),R('Chamoy','25 g',1.36),R('Miguelito tradicional','15 g',1.15),R('Limón','3 pzas',3.3),R('Sal','poquito',0.2),R('Hielo','4 hielos medianos',1),R('Vaso 1 L','1',2.55)],
+es:[R('Chamoy','25 g',1.36),R('Miguelito tradicional','15 g',1.15),R('Vaso 1 L','1',2.55)],
+ec:[R('Chamoy','25 g',1.36),R('Miguelito tradicional','15 g',1.15)]});
+function cab(ml){const x=ml/60,L=[0,.25,1/3,.5,2/3,.75,1];let w=Math.floor(x),r=x-w,f=L.reduce((a,b)=>Math.abs(b-r)<Math.abs(a-r)?b:a);if(f===1){w++;f=0}
+ if(!w&&!f)return '';
+ const T=f===.25?'cuarto':f===.5?'medio':f===.75?'tres cuartos':f?(f<.5?'un tercio':'dos tercios'):'';
+ if(!w)return f===.5?'medio caballito':(f===.25?'un cuarto':T)+' de caballito';
+ const B=w===1?'caballito':w+' caballitos';
+ return f?B+' y '+T:(w===1?'1 caballito':B)}
+function amt(v){v=String(v);const m=v.match(/^(~?\s*(\d+(?:[.,]\d+)?)\s*(ml|oz))\b/i);if(!m)return v;let ml=parseFloat(m[2].replace(',','.'));if(m[3].toLowerCase()==='oz')ml*=30;if(ml<10||ml>150)return v;const t=cab(ml);return t?m[1]+' ('+t+')':v}
+function fixAmt(d){Object.values(d.rec||{}).forEach(r=>r.forEach(x=>{x.a=amt(x.a)}))}
+function syncCost(d){d=d||S;d.prods.forEach(p=>{const r=d.rec&&d.rec[p.id];if(r)p.c=Math.round(r.reduce((a,x)=>a+(+x.c||0),0)*100)/100})}
+const VER=3;
+const DEF=()=>({v:VER,seq:0,fee:4,orders:[],rec:RECDEF(),
 prods:[
-{id:'az',e:'🔵',n:'Azulito',p:100,c:37.64,plan:16},
-{id:'mt',e:'🌿',n:'Mojito tradicional',p:100,c:36.74,plan:23},
-{id:'mf',e:'🍓',n:'Mojito frutos rojos',p:100,c:23.3,plan:6},
-{id:'co',e:'🍺',n:'Michelada Corona',p:100,c:47.79,plan:15},
-{id:'vi',e:'🍺',n:'Michelada Victoria',p:100,c:47.79,plan:15},
+{id:'az',e:'🔵',n:'Azulito',p:100,c:29.57,plan:45},
+{id:'mt',e:'🌿',n:'Mojito tradicional',p:100,c:44.27,plan:38},
+{id:'mf',e:'🍓',n:'Mojito frutos rojos',p:100,c:25.99,plan:6},
+{id:'co',e:'🍺',n:'Michelada Corona',p:100,c:49.14,plan:24},
+{id:'vi',e:'🍺',n:'Michelada Victoria',p:100,c:49.14,plan:24},
 {id:'es',e:'🧂',n:'Escarchado con vaso',p:20,c:5.06,plan:25},
 {id:'ec',e:'🥤',n:'Escarchado en vaso del cliente',p:15,c:2.51,plan:0}],
 items:[
-{n:'Vodka 1 L',q:'azulitos',u:'bot',c:1,p:299,b:1},{n:'Ron blanco 1.75 L',q:'mojitos',u:'bot',c:1,p:460,b:1},
+{n:'Vodka 1 L',q:'azulitos',u:'bot',c:1,p:299,b:1},{n:'Vodka 1.75 L',q:'azulitos',u:'bot',c:1,p:164.8,b:1},
+{n:'Ron blanco 1.75 L',q:'mojitos',u:'bot',c:1,p:460,b:1},{n:'Ron blanco 1.75 L (2.º)',q:'mojitos',u:'bot',c:1,p:388,b:1},
+{n:'Cerveza Corona 1.2 L',q:'cajas de 12',u:'cajas',c:2,p:475,b:1},{n:'Cerveza Victoria 1.2 L',q:'cajas de 12',u:'cajas',c:2,p:475,b:1},
+{n:'Maceradores (3)',q:'mojitos',u:'paq',c:1,p:141.55,b:1},
 {n:'Frutos rojos congelados 454 g',q:'mojito frutos rojos',u:'bolsa',c:1,p:65,b:1},{n:'Vasos 1 L (150)',q:'todos',u:'paq',c:1,p:382,b:1},
 {n:'Agua mineral 1.75 L',q:'mojitos',u:'bot',c:8,p:28.625,b:1},{n:'Volt 400 ml',q:'azulitos',u:'pzas',c:6,p:9,b:1},
 {n:'Miguelito mora azul 980 g',q:'solo azulitos',u:'bolsa',c:1,p:75,b:1},{n:'Miguelito tradicional ~950 g',q:'micheladas y escarchados',u:'bolsa',c:1,p:75,b:1},
 {n:'Chamoy tradicional 1.1 kg',q:'micheladas y escarchados',u:'frasco',c:1,p:60,b:1},{n:'Escarcha mora azul 1.1 kg',q:'azulitos',u:'frasco',c:1,p:60,b:1},
 {n:'Absolut frutos rojos 200 ml',q:'pon lo que pagaste',u:'bot',c:2,p:0,b:1},
-{n:'Caguamas Corona y Victoria',q:'cartón de 12 = $475',u:'caguamas',c:30,p:39.58,b:0},{n:'Sprite 3 L',q:'azulitos',u:'bot',c:3,p:45,b:0},
-{n:'Curazao 1 L',q:'azulitos',u:'bot',c:1,p:90,b:0},{n:'Agua mineral 1.75 L (extra)',q:'faltan ~3.4 L',u:'bot',c:2,p:28.625,b:0},
-{n:'Limón',q:'mojitos y micheladas',u:'pzas',c:110,p:1.1,b:0},{n:'Hierbabuena',q:'~29 porciones',u:'manojos',c:4,p:15,b:0},
-{n:'Azúcar',q:'mojitos',u:'kg',c:1,p:28,b:0},{n:'Sal',q:'micheladas',u:'250 g',c:1,p:10,b:0},
-{n:'Hielo',q:'todo',u:'bolsas 5 kg',c:3,p:38,b:0},{n:'Gasolina / traslado',q:'pendiente',u:'',c:1,p:0,b:0}]});
+{n:'Sprite 3 L',q:'45 azulitos = 25.3 L',u:'bot',c:9,p:45,b:0},{n:'Curazao 1 L',q:'45 azulitos = 1.35 L',u:'bot',c:2,p:90,b:0},
+{n:'Volt 400 ml (extra)',q:'45 azulitos = 4.5 L',u:'pzas',c:6,p:9,b:0},
+{n:'Agua mineral 1.75 L (extra)',q:'faltan ~12.4 L para 44 mojitos',u:'bot',c:8,p:28.625,b:0},
+{n:'Limón',q:'se piden ~264 pzas; cuenta cuántas salen por kilo (3 kg ≈ 35-60 pzas)',u:'pzas',c:264,p:1.1,b:0},
+{n:'Hierbabuena',q:'44 porciones',u:'manojos',c:6,p:15,b:0},{n:'Azúcar',q:'1.1 kg para 44 mojitos',u:'kg',c:2,p:28,b:0},
+{n:'Sal',q:'micheladas',u:'250 g',c:1,p:10,b:0},{n:'Hielo',q:'137 bebidas ≈ 550 hielos; la hielera de cervezas aparte',u:'bolsas 5 kg',c:4,p:38,b:0},
+{n:'Chamoy extra',q:'faltan ~725 g',u:'frasco',c:1,p:40,b:0},{n:'Miguelito tradicional extra',q:'faltan ~145 g',u:'bolsa',c:1,p:12,b:0},
+{n:'Vasos 1 L (12 extra)',q:'se piden 162 y hay 150',u:'pzas',c:12,p:2.55,b:0},
+{n:'Gasolina / traslado',q:'pendiente',u:'',c:1,p:0,b:0}]});
 let S=load(),view='caja',cart={},nm='',meth='Efectivo',rec='';
-function load(){try{const d=JSON.parse(localStorage.getItem(K));if(!d)return DEF();if(d.items.some(i=>i.c==null))d.items=DEF().items;return d}catch(e){return DEF()}}
+function load(){let d=null;try{d=JSON.parse(localStorage.getItem(K))}catch(e){}
+ if(!d)d=DEF();
+ if(d.v!==VER){const f=DEF();d.items=f.items;d.prods=f.prods;d.rec=f.rec;d.v=VER}
+ if(d.items.some(i=>i.c==null))d.items=DEF().items;
+ d.orders.forEach(o=>{if(o.k==null){o.k='L'+o.id;o.n=o.id}});
+ if(!d.rec)d.rec=RECDEF();
+ fixAmt(d);syncCost(d);return d}
 function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
 const m=n=>'$'+(Math.round(n*100)/100).toLocaleString('es-MX',{maximumFractionDigits:2});
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -88,16 +122,19 @@ const cartTotal=()=>Object.entries(cart).reduce((a,[k,v])=>a+v*P(k).p,0);
 const lineTxt=o=>Object.entries(o.it).map(([k,v])=>v+' × '+esc(P(k)?P(k).n:k)).join(', ');
 function go(t){view=t;render()}
 function render(){
- const T=[['caja','🧾 Caja'],['cola','⏳ Cola'],['dash','📊 Dashboard'],['compras','🛒 Compras'],['aj','⚙️ Ajustes']];
- $nav.innerHTML=T.map(([k,l])=>`<button class="${view===k?'on':''}" onclick="go('${k}')">${l}</button>`).join('');
- $v.innerHTML={caja,cola,dash,compras,aj}[view]();
+ badge();
+ if(mode==='wait'){$nav.innerHTML='';$v.innerHTML='<p class="mu">Conectando con la nube…</p>';return}
+ if(mode==='login'){$nav.innerHTML='';$v.innerHTML=loginV();return}
+ const T=[['caja','🧾','Caja'],['cola','⏳','Cola'],['dash','📊','Dashboard'],['compras','🛒','Compras'],['rec','🍹','Recetas'],['aj','⚙️','Ajustes']];
+ $nav.innerHTML=T.map(([k,e,l])=>`<button class="${view===k?'on':''}" onclick="go('${k}')">${e}<br>${l}</button>`).join('');
+ $v.innerHTML={caja,cola,dash,compras,rec:recetas,aj}[view]();
 }
 const $v=document.getElementById('v'),$nav=document.getElementById('nav');
 /* ---- CAJA ---- */
 function add(id,d){cart[id]=Math.max(0,(cart[id]||0)+d);if(!cart[id])delete cart[id];render()}
 function caja(){
  const t=cartTotal(),L=Object.entries(cart);
- return `<div class="card top"><h2 class="pid">Pedido #${S.seq+1}</h2><input class="big" placeholder="¿A nombre de quién?" value="${esc(nm)}" oninput="nm=this.value" autocomplete="off"></div>
+ return `<div class="card top"><h2 class="pid">Pedido #${nextN()}</h2><input class="big" placeholder="¿A nombre de quién?" value="${esc(nm)}" oninput="nm=this.value" autocomplete="off"></div>
  <div class="grid">${S.prods.map(p=>`<button class="prod" onclick="add('${p.id}',1)"><span class="em">${p.e}</span><b>${esc(p.n)}</b><small>${m(p.p)}</small>${cart[p.id]?`<i class="bdg">${cart[p.id]}</i>`:''}</button>`).join('')}</div>
  <div class="card"><h3>Cuenta</h3>
  ${L.map(([k,v])=>`<div class="it"><span>${esc(P(k).n)}<small>${m(P(k).p)} c/u</small></span><button class="sm" onclick="add('${k}',-1)">−</button><b>${v}</b><button class="sm" onclick="add('${k}',1)">+</button></div>`).join('')||'<p class="mu">Toca un producto para empezar.</p>'}
@@ -108,19 +145,20 @@ function chgTxt(t){return rec===''?'—':(+rec>=t?m(+rec-t):'faltan '+m(t-rec))}
 function chg(){document.getElementById('chg').textContent=chgTxt(cartTotal())}
 function send(){
  if(!Object.keys(cart).length)return alert('Agrega al menos un producto.');
- S.seq++;S.orders.push({id:S.seq,name:nm.trim()||'Sin nombre',it:{...cart},total:cartTotal(),method:meth,paid:meth!=='Por cobrar',st:0,t:Date.now()});
- save();cart={};nm='';rec='';render()}
+ const t=Date.now(),o={k:'o'+t+Math.random().toString(36).slice(2,6),n:nextN(),name:nm.trim()||'Sin nombre',it:{...cart},total:cartTotal(),method:meth,paid:meth!=='Por cobrar',st:0,t};
+ S.orders.push(o);putOrder(o);cart={};nm='';rec='';render()}
 /* ---- COLA ---- */
-function adv(id){const o=S.orders.find(x=>x.id===id);o.st++;save();render()}
-function pay(id,mt){const o=S.orders.find(x=>x.id===id);o.paid=true;o.method=mt;save();render()}
-function del(id){if(confirm('¿Cancelar el pedido #'+id+'?')){S.orders=S.orders.filter(x=>x.id!==id);save();render()}}
+const ord=k=>S.orders.find(x=>x.k===k);
+function adv(k){const o=ord(k);o.st++;putOrder(o);render()}
+function pay(k,mt){const o=ord(k);o.paid=true;o.method=mt;putOrder(o);render()}
+function del(k){const o=ord(k);if(confirm('¿Cancelar el pedido #'+o.n+'?')){S.orders=S.orders.filter(x=>x.k!==k);dropOrder(o);render()}}
 function cola(){
- const L=S.orders.filter(o=>o.st<3).sort((a,b)=>a.id-b.id),done=S.orders.length-L.length;
- return (L.length?L.map(o=>`<div class="card ord s${o.st}"><div class="row"><h3>#${o.id} ${esc(o.name)}</h3><span class="tag">${ST[o.st]}</span></div>
+ const L=S.orders.filter(o=>o.st<3).sort((a,b)=>a.t-b.t),done=S.orders.length-L.length;
+ return (L.length?L.map(o=>`<div class="card ord s${o.st}"><div class="row"><h3>#${o.n} ${esc(o.name)}</h3><span class="tag">${ST[o.st]}</span></div>
  <p>${lineTxt(o)}</p><small>${new Date(o.t).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})}</small>
- <div class="row"><span>${m(o.total)} · ${o.paid?esc(o.method):'<b class="bad">Por cobrar</b>'}</span><button class="pri sm" onclick="adv(${o.id})">${['Preparar','Marcar listo','Entregar'][o.st]}</button></div>
- ${o.paid?'':`<div class="chips">${MET.slice(0,3).map(x=>`<button class="sm" onclick="pay(${o.id},'${x}')">Cobrar ${x.toLowerCase()}</button>`).join('')}</div>`}
- <button class="sm" onclick="del(${o.id})">Cancelar pedido</button></div>`).join(''):'<p class="mu">No hay pedidos en cola. Cuando cobres uno en la caja aparece aquí, en orden de llegada.</p>')+`<p class="mu">Entregados: ${done}</p>`}
+ <div class="row"><span>${m(o.total)} · ${o.paid?esc(o.method):'<b class="bad">Por cobrar</b>'}</span><button class="pri sm" onclick="adv('${o.k}')">${['Preparar','Marcar listo','Entregar'][o.st]}</button></div>
+ ${o.paid?'':`<div class="chips">${MET.slice(0,3).map(x=>`<button class="sm" onclick="pay('${o.k}','${x}')">Cobrar ${x.toLowerCase()}</button>`).join('')}</div>`}
+ <button class="sm" onclick="del('${o.k}')">Cancelar pedido</button></div>`).join(''):'<p class="mu">No hay pedidos en cola. Cuando cobres uno en la caja aparece aquí, en orden de llegada.</p>')+`<p class="mu">Entregados: ${done}</p>`}
 /* ---- DASHBOARD ---- */
 function stats(){
  let inc=0,card=0,pend=0,cogs=0,n={};
@@ -137,10 +175,10 @@ function dash(){
  <p class="mu">Pedidos: ${S.orders.length} · en cola: ${open}</p></div>`}
 /* ---- COMPRAS ---- */
 const tot=i=>(+i.c||0)*(+i.p||0);
-function tg(i){S.items[i].b=S.items[i].b?0:1;save();render()}
-function ed(i,k,v){S.items[i][k]=['n','u','q'].includes(k)?v:(+v||0);save();render()}
-function rm(i){if(confirm('¿Quitar "'+S.items[i].n+'"?')){S.items.splice(i,1);save();render()}}
-function addItem(){const n=prompt('¿Qué compraste o te falta?');if(!n)return;S.items.push({n,q:'',u:'pzas',c:1,p:0,b:0});save();render()}
+function tg(i){S.items[i].b=S.items[i].b?0:1;saveCfg();render()}
+function ed(i,k,v){S.items[i][k]=['n','u','q'].includes(k)?v:(+v||0);saveCfg();render()}
+function rm(i){if(confirm('¿Quitar "'+S.items[i].n+'"?')){S.items.splice(i,1);saveCfg();render()}}
+function addItem(){const n=prompt('¿Qué compraste o te falta?');if(!n)return;S.items.push({n,q:'',u:'pzas',c:1,p:0,b:0});saveCfg();render()}
 function compras(){
  const sp=S.items.filter(i=>i.b).reduce((a,i)=>a+tot(i),0),fl=S.items.filter(i=>!i.b).reduce((a,i)=>a+tot(i),0),inv=sp+fl,pot=S.prods.reduce((a,p)=>a+p.plan*p.p,0);
  const row=(i,x)=>`<div class="it2"><div class="row"><input type="checkbox" ${i.b?'checked':''} onchange="tg(${x})"><input class="nm" value="${esc(i.n)}" onchange="ed(${x},'n',this.value)"><button class="sm" onclick="rm(${x})">✕</button></div>
@@ -152,20 +190,71 @@ function compras(){
  <small>Sin comisión de terminal. El plan se cambia en Ajustes.</small></div>
  <div class="card"><h3>Falta por comprar</h3><small>Cada renglón: cantidad, unidad y precio por unidad. El total se calcula solo. Marca la casilla cuando ya lo compraste.</small>${part(false)||'<p class="ok">Ya compraste todo 🎉</p>'}</div>
  <div class="card"><h3>Ya comprado</h3>${part(true)}</div><button onclick="addItem()">+ Agregar gasto o compra</button>`}
+/* ---- RECETAS ---- */
+function er(id,i,k,v){S.rec[id][i][k]=k==='c'?(+v||0):amt(v);syncCost();saveCfg();render()}
+function mlOf(a){const m=String(a).match(/(\d+(?:[.,]\d+)?)\s*(ml|oz)\b/i);if(!m)return 0;const v=parseFloat(m[1].replace(',','.'));return m[2].toLowerCase()==='oz'?v*30:v}
+function alcohol(){
+ const f=n=>+n.toFixed(2),L=S.prods.map(p=>{const x=(S.rec[p.id]||[]).find(r=>r.al);return x?{p,ml:mlOf(x.a)}:null}).filter(Boolean);
+ return `<div class="card"><h3>🥃 Alcohol por bebida</h3><small>1 oz = 30 ml · 1 caballito = 60 ml (2 oz)</small>
+ <table><tr><th>Bebida</th><th>ml</th><th>oz</th><th>Caballitos</th><th>Plan (ml)</th></tr>${L.map(({p,ml})=>`<tr><td>${esc(p.n)}</td><td>${f(ml)}</td><td>${f(ml/30)}</td><td>${ml<=150?esc(cab(ml)||'—'):f(ml/60)}</td><td class="mu">${f(ml*p.plan).toLocaleString('es-MX')}</td></tr>`).join('')}</table></div>`}
+function recetas(){
+ return `<p class="mu">Todas las bebidas van en vaso de 1 L. <b>1 caballito = 60 ml (2 oz).</b> Si escribes una cantidad en ml u oz (de 10 a 150 ml), la app agrega el caballito entre paréntesis. <b>Limones por bebida:</b> mojito tradicional 3 · mojito frutos rojos 1 · michelada 3 · azulito y escarchados 0. La caguama de 1.2 L no cabe completa en un vaso de 1 L con hielo: si sirves ~800 ml, el costo de la cerveza baja a ~$26.39 (edítalo aquí).</p>`+alcohol()+
+ S.prods.map(p=>{const r=S.rec[p.id]||[];return `<div class="card"><div class="row"><h3>${p.e} ${esc(p.n)}</h3><b>${m(p.c)}</b></div>
+ <small>Precio ${m(p.p)} · ganancia ${m(p.p-p.c)} por unidad</small>
+ ${r.map((x,i)=>`<div class="it2"><div class="row"><b>${esc(x.n)}</b><input type="number" step="any" inputmode="decimal" style="width:90px" value="${x.c}" onchange="er('${p.id}',${i},'c',this.value)"></div><input style="margin-top:6px" value="${esc(x.a)}" onchange="er('${p.id}',${i},'a',this.value)"></div>`).join('')}</div>`}).join('')}
 /* ---- AJUSTES ---- */
-function pf(i,k,v){S.prods[i][k]=k==='n'?v:(+v||0);save()}
+function pf(i,k,v){S.prods[i][k]=k==='n'?v:(+v||0);saveCfg()}
 function aj(){
- return `<div class="card"><h3>Precios, costos y plan</h3><small>Costo = lo que gastas en insumos por unidad. Plan = cuántas piensas vender.</small>
- <table><tr><th>Producto</th><th>Precio</th><th>Costo</th><th>Plan</th></tr>${S.prods.map((p,i)=>`<tr><td>${esc(p.n)}</td>${['p','c','plan'].map(k=>`<td><input type="number" inputmode="decimal" value="${p[k]}" onchange="pf(${i},'${k}',this.value)"></td>`).join('')}</tr>`).join('')}</table></div>
- <div class="card"><h3>Comisión de la terminal (%)</h3><input type="number" inputmode="decimal" value="${S.fee}" onchange="S.fee=+this.value||0;save()"></div>
+ return `<div class="card"><h3>Precios, costos y plan</h3><small>El costo se calcula en la pestaña Recetas. Plan = cuántas piensas vender.</small>
+ <table><tr><th>Producto</th><th>Precio</th><th>Costo</th><th>Plan</th></tr>${S.prods.map((p,i)=>`<tr><td>${esc(p.n)}</td>${['p','c','plan'].map(k=>k==='c'?`<td class="mu">${m(p.c)}</td>`:`<td><input type="number" inputmode="decimal" value="${p[k]}" onchange="pf(${i},'${k}',this.value)"></td>`).join('')}</tr>`).join('')}</table></div>
+ <div class="card"><h3>Comisión de la terminal (%)</h3><input type="number" inputmode="decimal" value="${S.fee}" onchange="S.fee=+this.value||0;saveCfg()"></div>
  <div class="card"><h3>Respaldo</h3><p><button onclick="csv()">Descargar pedidos (CSV)</button> <button onclick="bak()">Respaldo completo (JSON)</button></p>
- <small>Los datos viven en este navegador. Descarga un respaldo al cerrar cada día.</small></div>
- <button onclick="if(confirm('¿Borrar pedidos y volver a los valores iniciales?')){S=DEF();save();render()}">Reiniciar todo</button>`}
+ <small>${mode==='cloud'?'Los pedidos se guardan en la nube y se ven en todos tus celulares. Aun así, descarga un respaldo al cerrar el día.':'Los datos viven en este navegador. Descarga un respaldo al cerrar cada día.'}</small></div>
+ ${mode==='cloud'?'<button onclick="CL.out()">Cerrar sesión</button> ':''}<button onclick="resetAll()">Reiniciar todo</button>`}
 function dl(txt,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type}));a.download=name;a.click()}
 function csv(){const q=s=>'"'+String(s).replace(/"/g,'""')+'"';
- dl('\ufeff'+['Pedido,Nombre,Productos,Total,Método,Pagado,Estado,Hora'].concat(S.orders.map(o=>[o.id,q(o.name),q(lineTxt(o).replace(/&amp;/g,'&')),o.total,o.method,o.paid?'sí':'no',ST[o.st],new Date(o.t).toLocaleString('es-MX')].join(','))).join('\n'),'pedidos-halloween.csv','text/csv')}
+ dl('\ufeff'+['Pedido,Nombre,Productos,Total,Método,Pagado,Estado,Hora'].concat(S.orders.map(o=>[o.n,q(o.name),q(lineTxt(o).replace(/&amp;/g,'&')),o.total,o.method,o.paid?'sí':'no',ST[o.st],new Date(o.t).toLocaleString('es-MX')].join(','))).join('\n'),'pedidos-halloween.csv','text/csv')}
 function bak(){dl(JSON.stringify(S),'respaldo-halloween.json','application/json')}
+/* ---- NUBE ---- */
+let mode=FB.apiKey?'wait':'local',pendW=0,pendR=0;
+const cl=()=>mode==='cloud'&&window.CL?window.CL:null;
+const nextN=()=>Math.max(0,...S.orders.map(o=>o.n||0))+1;
+const cfgNow=()=>({v:VER,prods:S.prods,items:S.items,fee:S.fee,rec:S.rec});
+function saveCfg(){save();const c=cl();if(c)c.setCfg(cfgNow()).catch(()=>{})}
+function putOrder(o){save();const c=cl();if(c)c.put(o).catch(()=>{})}
+function dropOrder(o){save();const c=cl();if(c)c.del(o).catch(()=>{})}
+function resetAll(){if(!confirm('¿Borrar todos los pedidos y volver a los valores iniciales?'))return;const old=[...S.orders];S=DEF();fixAmt(S);syncCost();old.forEach(dropOrder);saveCfg();render()}
+function setMode(x){mode=x;render()}
+function onOrders(list,p){S.orders=list;pendW=p;save();badge();soft()}
+function onCfg(d){if(d.v!==VER){const c=cl();if(c)c.setCfg(cfgNow());return}if(d.prods)S.prods=d.prods;if(d.items)S.items=d.items;if(d.fee!=null)S.fee=d.fee;if(d.rec){S.rec=d.rec;fixAmt(S)}syncCost();save();soft()}
+function soft(){const a=document.activeElement;if(a&&a.tagName==='INPUT'&&$v.contains(a))pendR=1;else render()}
+document.addEventListener('focusout',()=>setTimeout(()=>{const a=document.activeElement;if(pendR&&!(a&&a.tagName==='INPUT')){pendR=0;render()}},250));
+function badge(){const e=document.getElementById('stt');if(!e)return;e.textContent=mode==='cloud'?(navigator.onLine?(pendW?'☁️ Subiendo…':'☁️ En línea'):'📴 Sin conexión, se sube después'):mode==='local'?(FB.apiKey?'💾 Sin nube (modo local)':'💾 Solo este celular'):''}
+addEventListener('online',badge);addEventListener('offline',badge);
+function loginV(){return `<div class="card"><h3>Entrar a la nube</h3><small>Usa el correo y la contraseña que creaste en Firebase.</small>
+ <input id="lem" type="email" placeholder="Correo" autocomplete="username" style="margin:10px 0 6px"><input id="lpw" type="password" placeholder="Contraseña" autocomplete="current-password">
+ <p id="lmsg" class="bad"></p><button class="pri" onclick="doLogin()">Entrar</button></div>`}
+async function doLogin(){const m=document.getElementById('lmsg');m.textContent='';try{await window.CL.login(document.getElementById('lem').value.trim(),document.getElementById('lpw').value)}catch(e){m.textContent='No se pudo entrar. Revisa el correo y la contraseña.'}}
+setTimeout(()=>{if(mode==='wait')setMode('local')},9000);
 render();
+</script>
+<script type="module">
+if(FB.apiKey){try{
+const B='https://www.gstatic.com/firebasejs/10.12.2/';
+const [{initializeApp},au,fs]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
+const app=initializeApp(FB),auth=au.getAuth(app),db=fs.initializeFirestore(app,{localCache:fs.persistentLocalCache({tabManager:fs.persistentMultipleTabManager()})});
+const D=(c,i)=>fs.doc(db,c,i);
+window.CL={login:(e,p)=>au.signInWithEmailAndPassword(auth,e,p),out:()=>au.signOut(auth),
+ setCfg:c=>fs.setDoc(D('cfg','main'),c),put:o=>fs.setDoc(D('orders',o.k),o),del:o=>fs.deleteDoc(D('orders',o.k))};
+let u1,u2;
+au.onAuthStateChanged(auth,u=>{
+ if(u1)u1();if(u2)u2();
+ if(!u){setMode('login');return}
+ setMode('cloud');
+ u1=fs.onSnapshot(fs.collection(db,'orders'),s=>onOrders(s.docs.map(d=>({...d.data(),k:d.id})),s.metadata.hasPendingWrites));
+ u2=fs.onSnapshot(D('cfg','main'),s=>{if(s.exists())onCfg(s.data());else if(!s.metadata.fromCache)window.CL.setCfg(cfgNow())});
+});
+}catch(e){console.error(e);setMode('local')}}
 </script>
 </body>
 </html>
